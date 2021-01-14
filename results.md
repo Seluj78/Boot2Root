@@ -226,10 +226,33 @@ then we use it to ssh with laurie on the boot2root iso
 
 we decompile bomb and we deduced with the c decompilation that:
 
-1 phase: ```Public speaking is very easy.```
+1 phase: 
+```
+Public speaking is very easy.
+```
 
-2 phase: ```Public speaking is very easy.```
-3 phase: ```Public speaking is very easy.```
+2 phase: 
+```
+1 2 6 24 120 720
+```
+
+phase 3:
+```
+0 q 777
+1 b 214
+2 b 755
+3 k 251
+4 o 160
+5 t 458
+6 v 780
+7 b 524
+```
+
+phase 4: 
+```
+9
+```
+
 4 phase: ```Public speaking is very easy.```
 5 phase: ```Public speaking is very easy.```
 6 phase: ```Public speaking is very easy.```
