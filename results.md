@@ -6,20 +6,19 @@
 ifconfig # to get the ip of the vm
 ```
 
-
 ```sh
-netstat -r # get open ports and ip
+sudo nmap -v -T4 -A 192.168.1.0/24 # scan our local network
 ```
 
 ```sh
-sudo nmap -v -T4 -A 192.168.1.0/24 # scan the network
+netstat -r # get open ports and ip
 ```
 
 ```sh
 arp -a
 ```
 
-port ftp : 21 -> donc l'ip avec un port ftp appartiend a boot2root
+port ftp : 21 -> donc l'ip avec un port ftp appartiens a boot2root
 
 to get all the ports :
 
@@ -101,7 +100,7 @@ on forum ```https://ip_machine/forum/index.php?id=6```
 
 we found a password on the report : 
 ```!q\]Ej?*5K5cy*AJ```
-![result](./screen.png)
+![result](./assets/screen.png)
 
 we connect to ```lmezard``` (the sender of the message) with this password
 we manage to get lmezard's mail : ```laurie@borntosec.net```
@@ -109,8 +108,8 @@ we manage to get lmezard's mail : ```laurie@borntosec.net```
 we found that there is a phpmyadmin page and a webmail page. 
 
 We access to the webmail of laurie : 
-![result](./mail.png) 
-![result](./mail1.png)
+![result](./assets/mail.png) 
+![result](./assets/mail1.png)
 
 for php my admin 
 
@@ -208,8 +207,8 @@ lmezard:G!@M6f4Eatau{sF
 ```
 
 the pass is the pass of the ftp server:
-![result](./filezila.png)
-![result](./readme.png)
+![result](./assets/filezila.png)
+![result](./assets/readme.png)
 
 so let's try to resolve the enigma on the fun file
 
@@ -253,6 +252,5 @@ phase 4:
 9
 ```
 
-4 phase: ```Public speaking is very easy.```
-5 phase: ```Public speaking is very easy.```
-6 phase: ```Public speaking is very easy.```
+5 phase: We know it's `6` chars long
+6 phase: We know it starts with 6 chars
