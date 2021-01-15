@@ -223,6 +223,24 @@ encrypt : 330b845f32185747e4f8ca15d40ca59796035c89ea809fb5d30f4da83ecf45a4
 
 then we use it to ssh with laurie on the boot2root iso
 
+the README say:
+```sh
+laurie@BornToSecHackMe:~$ cat README
+Diffuse this bomb!
+When you have all the password use it as "thor" user with ssh.
+
+HINT:
+P
+ 2
+ b
+
+o
+4
+
+NO SPACE IN THE PASSWORD (password is case sensitive).
+```
+
+
 we decompile bomb and we deduced with the c decompilation that:
 
 1 phase: 
@@ -253,4 +271,94 @@ phase 4:
 ```
 
 5 phase: We know it's `6` chars long
-6 phase: We know it starts with 6 chars
+
+by decompiling the phase5, we found the string ```isrveawhobpnutfg```
+and with it we found :
+```
+opekma
+```
+
+
+6 phase: with brutforce with those script:
+```py
+import itertools
+
+with open("brute.txt", "w") as f:
+    for perm in itertools.permutations([1, 2, 3, 4, 5, 6]):
+        f.write(" ".join(str(x) for x in perm) + "\n")
+```
+```sh
+#!/bin/bash
+
+while IFS= read -r line
+do
+  echo "$line"
+  echo -e "Public speaking is very easy.\n1 2 6 24 120 720\n0 q 777\n9\nopekma\n$line\n" | ./bomb
+done < brute.txt
+```
+
+```sh
+bash t.sh | grep "Congratulations" -B8
+```
+output :
+```sh
+laurie@BornToSecHackMe:~$ bash t.sh | grep "Congratulations" -B8
+4 2 6 3 1 5
+Welcome this is my little bomb !!!! You have 6 stages with
+only one life good luck !! Have a nice day!
+Phase 1 defused. How about the next one?
+That's number 2.  Keep going!
+Halfway there!
+So you got that one.  Try this one.
+Good work!  On to the next...
+Congratulations! You've defused the bomb!
+```
+
+
+So the final result is save on a file and used to diffuse the bomb (diffuser.txt)
+```txt
+Public speaking is very easy.
+1 2 6 24 120 720
+0 q 777
+9
+opekma
+4 2 6 3 1 5
+```
+
+in the tor user we have a README and a a file that we deduce is some command for turtle
+```sh
+cat README
+Finish this challenge and use the result as password for 'zaz' user.
+```
+we use the turtle file with this script
+```py
+from turtle import *
+
+begin_fill()
+with open("turtle", "r") as f:
+    lines = f.readlines()
+right(90)
+for line in lines:
+    cmd = line.split(" ")
+    if cmd[0] == "Avance":
+        forward(int(cmd[1]))
+    elif cmd[0] == "Tourne":
+        if cmd[1] == "gauche":
+            left(int(cmd[3]))
+        elif cmd[1] == "droite":
+            right(int(cmd[3]))
+    elif cmd[0] == "Recule":
+        backward(int(cmd[1]))
+    else:
+        print(line)
+end_fill()
+done()
+```
+
+Then the turtle draw letters ```SLASH```
+So we enctrypt it with md5 and that was the pass to user zaz
+```
+646da671ca01bb5d84dbb5fb2238dc8e
+```
+
+
