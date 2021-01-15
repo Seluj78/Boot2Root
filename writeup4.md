@@ -7,6 +7,7 @@ live /boot init=/bin/sh
 ```
 
 then we have
-![boot](assets/Screenshot_2021-01-15_at_13.03.16.png)
+
+![boot](assets/boot_exploit.png)
 
 WOW we are root
